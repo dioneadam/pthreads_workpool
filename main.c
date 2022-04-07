@@ -1,9 +1,9 @@
 #include <stdio.h> 
+#include <stdlib.h>
 #include <pthread.h> 
 #include "tpool.h"
 
-#define THREADS 2
-#define TASKS  10
+#define THREADS 4
 
 int count_added = 0, count_done = 0;
 int total = 0;
@@ -27,13 +27,32 @@ void job(void* arg)
  
 int main(void) 
 { 
-  int numbers[]={1, 2, 3, 4, 5, 6, 7, 8, 9, 10}; 
+  FILE *pont_arq;
+  char content[20];
+  
+  pont_arq = fopen("inputs/e1.in", "r");
+
+  // read the fisrt line of file, that contains the numbers quantity
+  fgets(content, 20, pont_arq);
+  int tasks_quantity = atoi(content);
+
+  int numbers[tasks_quantity];
+
+  // continue read the file
+  int count = 0;
+  while(fgets(content, 20, pont_arq)!= NULL) {
+    numbers[count] = atoi(content);
+    count ++;
+  }
+  
+  //close file
+  fclose(pont_arq);
 
   tpool_t test_pool; 
  
-  tpool_init(&test_pool, THREADS, TASKS); 
+  tpool_init(&test_pool, THREADS, tasks_quantity); 
  
-  for (int i = 0; i < TASKS; i++) { 
+  for (int i = 0; i < tasks_quantity; i++) { 
     tpool_add_work(test_pool, job, &numbers[i]); 
     count_added++;
   } 
@@ -42,9 +61,9 @@ int main(void)
  
   tpool_destroy(test_pool, 1); 
 
-  printf("Did %d tasks\n", count_done);
+  printf("Finish %d tasks\n", count_done);
 
-  printf("\n\nTotal de divisores: %d\n", total);
+  printf("\nTotal de divisores: %d\n", total);
  
   return 0; 
 }
