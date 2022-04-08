@@ -1,7 +1,13 @@
+//Nomes: Dione Adam, Julia Boesing
+//Computação de Alto Desempenho 2022/01
+
 #include <stdio.h> 
 #include <stdlib.h>
+#include <time.h>
 
-#define FILE_PATH "inputs/e2.in"
+#define FILE_PATH "inputs/e1.in"
+
+typedef struct timespec Time;
 
 int total = 0;
 int numbers_size = 0;
@@ -9,6 +15,12 @@ int numbers_size = 0;
 int* read_file();
 
 int main(void) { 
+
+  double time;
+  Time start_time, end_time;
+
+  // Gets the initial time
+  clock_gettime(CLOCK_THREAD_CPUTIME_ID, (struct timespec *) &start_time);
 
   // chama a função read_file() para ler o arquivo
   // recebe um pointeiro para um array contendo os números
@@ -25,8 +37,16 @@ int main(void) {
     total += result;
   }
 
+  // Gets the final time
+  clock_gettime(CLOCK_THREAD_CPUTIME_ID, (struct timespec *) &end_time);
+
   printf("\nTotal de divisores: %d\n", total);
+
+  time = (double) (end_time.tv_sec - start_time.tv_sec ) +
+         (double) (end_time.tv_nsec - start_time.tv_nsec) * 1e-9;
   
+  printf("\nTempo de execução: %fs\n", time);
+
   return 0; 
 }
 

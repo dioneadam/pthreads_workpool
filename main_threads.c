@@ -1,45 +1,78 @@
+//Nomes: Dione Adam, Julia Boesing
+//Computação de Alto Desempenho 2022/01
+
 #include <stdio.h> 
 #include <stdlib.h>
-#include <pthread.h> 
+#include <pthread.h>
+#include <time.h>
 #include "threadpool.h"
 
-#define THREADS 4
-#define FILE_PATH "inputs/e2.in"
+//Quantidade de Threads a serem criadas/executadas
+#define THREADS 2
 
+//Arquivo com a lista de números
+#define FILE_PATH "inputs/e1.in"
+
+typedef struct timespec Time;
+
+//Contadores auxiliares para verificação de criação de tasks
 int count_added = 0;
 int count_done = 0;
 
+//Total de divisores encontrados
 int total = 0;
+
+//Tamanho da lista de tarefas
 int numbers_size = 0;
 
 int* read_file();
 void job(void* arg);
  
 int main(void) { 
+  double time;
+  Time start_time, end_time;
+
+  // Tempo inicial
+  clock_gettime(CLOCK_THREAD_CPUTIME_ID, (struct timespec *) &start_time);
 
   threadpool_t pool;
   
   // chama a função read_file() para ler o arquivo
   // recebe um pointeiro para um array contendo os números
   int *numbers = read_file();
- 
+  
+  // Cria as threads
   threadpool_create(&pool, THREADS, numbers_size); 
- 
+  
   for (int i = 0; i < numbers_size; i++) { 
+    //Aloca uma tarefa na fila
     threadpool_add_task(pool, job, &numbers[i]); 
     count_added++;
   } 
 
   printf("Added %d tasks\n", count_added); 
  
-  threadpool_destroy(pool, 1); 
+  // Termina a execução das threads
+  threadpool_destroy(pool, 1);
+
+  // Tempo final
+  clock_gettime(CLOCK_THREAD_CPUTIME_ID, (struct timespec *) &end_time); 
 
   printf("Finish %d tasks\n", count_done);
   printf("\nTotal de divisores: %d\n", total);
+
+  // Converte o tempo de nanossegundos em segundos
+  // Calcula o tempo de execução
+  time = (double) (end_time.tv_sec - start_time.tv_sec ) +
+         (double) (end_time.tv_nsec - start_time.tv_nsec) * 1e-9;
+  
+  printf("\nTempo de execução: %fs\n", time);
  
   return 0; 
 }
 
+// Calcula o total de divisores para um número
+// arg é o parametro que recebe o número a ser descoberto os divisores
 void job(void* arg) { 
   int number = *(int*)arg;
 
@@ -54,7 +87,7 @@ void job(void* arg) {
  
   total += result;
   count_done++;
-} 
+}
 
 int* read_file() {
   FILE *file;

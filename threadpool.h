@@ -1,3 +1,5 @@
+//Nomes: Dione Adam, Julia Boesing
+//Computação de Alto Desempenho 2022/01
 
 typedef struct threadpool_task { 
   void (*routine)(void *); 
@@ -15,8 +17,7 @@ typedef struct threadpool {
   int queue_closed;             // As tarefas restantes podem ser completadas, mas não pode ser adicionada novas tarefas
   int shutdown;                 // Terminar imediatamente, mesmo se houver tarefas não finalizadas
   pthread_mutex_t queue_lock;   
-  pthread_cond_t task_notify; 
-  pthread_cond_t can_add_task; 
+  pthread_cond_t task_notify;
   pthread_cond_t queue_empty; 
 } *threadpool_t; 
  
