@@ -4,17 +4,17 @@
 #include <sys/types.h> 
 #include <string.h> 
 #include <pthread.h> 
-#include "tpool.h"
+#include "threadpool.h"
 
-void *tpool_thread(void *); 
-int empty(tpool_t pool);
-int full(tpool_t pool);
-int size(tpool_t pool);
+void *worker(void *); 
+int empty(threadpool_t pool);
+int full(threadpool_t pool);
+int size(threadpool_t pool);
  
-void tpool_init(tpool_t *tpoolp, int threads_quantity, int tasks_queue_size) { 
-  tpool_t pool = (tpool_t)malloc(sizeof(struct tpool)); 
+void threadpool_create(threadpool_t *threadpool, int pool_size, int tasks_queue_size) { 
+  threadpool_t pool = (threadpool_t)malloc(sizeof(struct threadpool)); 
  
-  pool->threads_quantity = threads_quantity; 
+  pool->pool_size = pool_size; 
   pool->tasks_queue_size = tasks_queue_size + 1; 
   pool->threads = NULL; 
   pool->head = 0; 
@@ -27,22 +27,22 @@ void tpool_init(tpool_t *tpoolp, int threads_quantity, int tasks_queue_size) {
   pthread_cond_init(&pool->task_notify, NULL);
   pthread_cond_init(&pool->queue_empty, NULL);
  
-  pool->tasks = malloc(sizeof(struct tpool_work) * pool->tasks_queue_size);
+  pool->tasks = malloc(sizeof(struct threadpool_task) * pool->tasks_queue_size);
  
-  pool->threads = malloc(sizeof(pthread_t) * threads_quantity);
+  pool->threads = malloc(sizeof(pthread_t) * pool_size);
  
-  for (int i = 0; i < threads_quantity; i++) { 
-    if (pthread_create(&pool->threads[i], NULL, tpool_thread, (void *)pool) != 0) { 
+  for (int i = 0; i < pool_size; i++) { 
+    if (pthread_create(&pool->threads[i], NULL, worker, (void *)pool) != 0) { 
       perror("pthread_create"); 
       exit(0); 
     } 
   }
  
-  *tpoolp = pool; 
+  *threadpool = pool; 
 }
  
-int tpool_add_work(tpool_t tpool, void(*routine)(void *), void *arg) { 
-  tpool_work_t *temp; 
+int threadpool_add_task(threadpool_t tpool, void(*routine)(void *), void *arg) { 
+  threadpool_task_t *temp; 
  
   pthread_mutex_lock(&tpool->queue_lock); 
  
@@ -70,43 +70,9 @@ int tpool_add_work(tpool_t tpool, void(*routine)(void *), void *arg) {
   pthread_mutex_unlock(&tpool->queue_lock);   
  
   return 0; 
-} 
+}
  
-void *tpool_thread(void *arg) { 
-  tpool_t pool = (tpool_t)(arg); 
-  tpool_work_t *work; 
- 
-  for (;;) { 
-    pthread_mutex_lock(&pool->queue_lock); 
- 
-    while (empty(pool) && !pool->shutdown) {  
-      pthread_cond_wait(&pool->task_notify, &pool->queue_lock); 
-    } 
- 
-    if (pool->shutdown == 1) { 
-      pthread_mutex_unlock(&pool->queue_lock); 
-      pthread_exit(NULL); 
-    } 
- 
-    int is_full = full(pool); 
-    work = pool->tasks + pool->head; 
-    pool->head = (pool->head + 1) % pool->tasks_queue_size; 
- 
-    if (is_full) { 
-      pthread_cond_broadcast(&pool->can_add_task); 
-    } 
- 
-    if (empty(pool)) { 
-      pthread_cond_signal(&pool->queue_empty); 
-    } 
- 
-    pthread_mutex_unlock(&pool->queue_lock);   
- 
-    (*(work->routine))(work->arg); 
-  } 
-} 
- 
-int tpool_destroy(tpool_t tpool, int finish) { 
+int threadpool_destroy(threadpool_t tpool, int finish) { 
   pthread_mutex_lock(&tpool->queue_lock); 
  
   tpool->queue_closed = 1; 
@@ -124,7 +90,7 @@ int tpool_destroy(tpool_t tpool, int finish) {
   pthread_cond_broadcast(&tpool->task_notify); 
  
   // wait worker thread exit 
-  for (int i = 0; i < tpool->threads_quantity; i++) { 
+  for (int i = 0; i < tpool->pool_size; i++) { 
     pthread_join(tpool->threads[i], NULL); 
   } 
  
@@ -134,14 +100,48 @@ int tpool_destroy(tpool_t tpool, int finish) {
   free(tpool); 
 }
 
-int empty(tpool_t pool) { 
+void *worker(void *arg) { 
+  threadpool_t pool = (threadpool_t)(arg); 
+  threadpool_task_t *task; 
+ 
+  for (;;) { 
+    pthread_mutex_lock(&pool->queue_lock); 
+ 
+    while (empty(pool) && !pool->shutdown) {  
+      pthread_cond_wait(&pool->task_notify, &pool->queue_lock); 
+    } 
+ 
+    if (pool->shutdown == 1) { 
+      pthread_mutex_unlock(&pool->queue_lock); 
+      pthread_exit(NULL); 
+    } 
+ 
+    int is_full = full(pool); 
+    task = pool->tasks + pool->head; 
+    pool->head = (pool->head + 1) % pool->tasks_queue_size; 
+ 
+    if (is_full) { 
+      pthread_cond_broadcast(&pool->can_add_task); 
+    } 
+ 
+    if (empty(pool)) { 
+      pthread_cond_signal(&pool->queue_empty); 
+    } 
+ 
+    pthread_mutex_unlock(&pool->queue_lock);   
+ 
+    (*(task->routine))(task->arg); 
+  } 
+}
+
+int empty(threadpool_t pool) { 
   return pool->head == pool->tail; 
 } 
  
-int full(tpool_t pool) { 
+int full(threadpool_t pool) { 
   return ((pool->tail + 1) % pool->tasks_queue_size == pool->head); 
 } 
  
-int size(tpool_t pool) { 
+int size(threadpool_t pool) { 
   return (pool->tail + pool->tasks_queue_size - pool->head) % pool->tasks_queue_size; 
 }
