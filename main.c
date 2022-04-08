@@ -19,7 +19,7 @@ int main(void) {
   double time;
   Time start_time, end_time;
 
-  // Gets the initial time
+  // Tempo inicial
   clock_gettime(CLOCK_THREAD_CPUTIME_ID, (struct timespec *) &start_time);
 
   // chama a função read_file() para ler o arquivo
@@ -37,11 +37,13 @@ int main(void) {
     total += result;
   }
 
-  // Gets the final time
+  // Tempo final
   clock_gettime(CLOCK_THREAD_CPUTIME_ID, (struct timespec *) &end_time);
 
   printf("\nTotal de divisores: %d\n", total);
 
+  // Converte o tempo de nanossegundos em segundos
+  // Calcula o tempo de execução
   time = (double) (end_time.tv_sec - start_time.tv_sec ) +
          (double) (end_time.tv_nsec - start_time.tv_nsec) * 1e-9;
   

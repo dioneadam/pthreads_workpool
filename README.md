@@ -4,17 +4,27 @@
 #### Computação de Alto Desempenho 2022/01
 
 ---
-## Como rodar:
 
+### Build and run
+
+
+Execute
+```
+make build
+./main_threads
+./main
+```
+
+ou execute os seuintes comandos:
 
 #### Sem threads:
-
 ```
-gcc -pthread threadpool.c main.c -o bin/main
+gcc -pthread threadpool.c main.c -o main
+./main
 ```
 
 #### Com threads:
 ```
-gcc -pthread threadpool.c main_threads.c -o bin/main_threads
+gcc -pthread threadpool.c main_threads.c -o main_threads
+./main_threads
 ```
-

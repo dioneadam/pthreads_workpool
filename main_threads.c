@@ -8,7 +8,7 @@
 #include "threadpool.h"
 
 //Quantidade de Threads a serem criadas/executadas
-#define THREADS 2
+#define THREADS 4
 
 //Arquivo com a lista de números
 #define FILE_PATH "inputs/e1.in"
@@ -22,7 +22,7 @@ int count_done = 0;
 //Total de divisores encontrados
 int total = 0;
 
-//Tamanho da lista de tarefas
+//Tamanho da fila de tarefas
 int numbers_size = 0;
 
 int* read_file();

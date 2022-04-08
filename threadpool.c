@@ -33,7 +33,7 @@ void threadpool_create(threadpool_t *threadpool, int pool_size, int tasks_queue_
   pthread_cond_init(&pool->task_notify, NULL);
   pthread_cond_init(&pool->queue_empty, NULL);
  
-  //Aloca memria para as filas
+  //Aloca memoria para as filas
   pool->tasks = malloc(sizeof(struct threadpool_task) * pool->tasks_queue_size);
   pool->threads = malloc(sizeof(pthread_t) * pool_size);
  
@@ -122,7 +122,7 @@ void *worker(void *arg) {
   for (;;) {
     pthread_mutex_lock(&pool->queue_lock); 
  
-    //verifica se existe alguma task para processar e estamos rodando
+    //verifica se não existe tasks para processar e se estamos rodando
     // e esperamos na condicional até sermos sinalizados que existe uma nova task
     while (empty(pool) && !pool->shutdown) {  
       pthread_cond_wait(&pool->task_notify, &pool->queue_lock); 
@@ -142,7 +142,7 @@ void *worker(void *arg) {
  
     //Como todas as threads são sinalizadas que existe uma task disponivel
     //é possivel que nesse momento as tasks disponiveis já foram processadas por
-    //alguma outra thread e não existe mais tasks na fila.
+    //outra thread e a fila eteja vazia
     //Caso isso aconteça, espera na condicional
     if (empty(pool)) { 
       pthread_cond_signal(&pool->queue_empty); 

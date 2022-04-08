@@ -1,8 +1,10 @@
 clean:
-	rm bin/main_threads
+	rm main_threads
+	rm main
 
 build: main.c
-	gcc -pthread threadpool.c main_threads.c -o bin/main_threads
+	gcc -pthread threadpool.c main_threads.c -o main_threads
+	gcc -pthread threadpool.c main_threads.c -o main
 
 run: build
-	./bin/main_threads
+	./main_threads
